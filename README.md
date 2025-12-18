@@ -1,5 +1,10 @@
 # AI Social Media Post Creator – Backend (Node.js + Express)
 
+## 🔗 Links
+
+- **Frontend Live Demo**: [https://robo-frontend-teal.vercel.app/](https://robo-frontend-teal.vercel.app/)
+- **Frontend Repository**: [https://github.com/MananBagadi100/Robo-frontend](https://github.com/MananBagadi100/Robo-frontend)
+
 This is the backend service for the AI-powered Social Media Post Creator application.  
 It handles API requests from the frontend, communicates with OpenAI, and returns:
 
@@ -19,6 +24,25 @@ This backend is lightweight, fast, and fully deployable (Vercel / Render / Railw
 - **CORS**
 - **dotenv**
 - **nodemon** (local development)
+- **express-rate-limit** (API abuse & cost protection)
+
+---
+
+## 🛡️ Rate Limiting & Cost Protection
+
+To prevent API abuse and control OpenAI usage costs, the backend implements **IP-based rate limiting**.
+
+### Policy
+- **1 request per IP per hour**
+- Automatically blocks excessive requests
+- Returns HTTP **429 – Too Many Requests**
+
+### Why This Matters
+- Prevents spam and accidental double submissions
+- Protects paid OpenAI API credits
+- Makes the system production-safe
+
+This logic is handled entirely on the backend using `express-rate-limit`, so the frontend remains lightweight.
 
 ---
 
@@ -118,6 +142,13 @@ Generates:
 }
 ```
 
+⚠️ If the rate limit is exceeded, the API responds with:
+```json
+{
+  "message": "Too many requests. Please try again later."
+}
+```
+
 ---
 
 ## 🔍 Testing with Postman / Thunder Client
@@ -190,9 +221,9 @@ This backend demonstrates:
 ✔ Strong separation of concerns (controllers, routes, services)  
 ✔ Production-ready design & deployment  
 ✔ Easy API testing workflow  
+✔ API rate limiting to prevent abuse and control costs
 
 ---
 
 ## 👤 Author  
 Manan Bagadi
-
