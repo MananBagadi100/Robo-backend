@@ -13,17 +13,19 @@ app.use(express.json());
 const rateLimit = require('express-rate-limit')
 const limiter = rateLimit({
 	windowMs: 60 * 60 * 1000, // 60 minutes
-	limit: 1, // Limit each IP to 1 requests per `window` (here, per 60 minutes).
+	limit: 10, // Limit each IP to 1 requests per `window` (here, per 60 minutes).
 	standardHeaders: 'draft-8',
 	legacyHeaders: false,
     handler : (req,res) => {
-        console.log('The IP of the client is ',req.headers['x-forwarded-for'] || req.connection.remoteAddress)
+        console.log('The IP of the client is ',req.connection.remoteAddress)
         res.status(429).json({msg : 'Usage Limit Reached . Please try again after an hour'})
     }
 })
 app.use(limiter)    //apply to all requests 
+
 //Tesing 
 app.use('/api/test',(req,res) => {
+    console.log(req.connection.remoteAddress)
     res.json({msg : "Hello from server !"})
 })
 // Routes

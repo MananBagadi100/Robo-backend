@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
+const { checkHash } = require('../middleware/checkHash')
 const { generateContent } = require("../controllers/aiController");
 
 // POST: /api/ai/generate
-router.post("/generate", generateContent);
+router.post("/generate", checkHash ,generateContent);
 
 module.exports = router;
