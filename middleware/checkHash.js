@@ -4,10 +4,10 @@ async function checkHash(req,res,next) {
     console.log('i am in check has')
     const { prompt } = req.body
 
-    if (!prompt || typeof prompt !== 'string') {
+    if (!prompt || typeof prompt !== 'string') {        //if prompt is not a string
         res.status(400).json({msg : 'Invalid Prompt'})
     }
-    const normalizedPrompt = prompt
+    const normalizedPrompt = prompt                    
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9.,?' ']/g,'')
@@ -25,12 +25,11 @@ async function checkHash(req,res,next) {
             return next () 
         }
         else {
-            console.log('the found query in the database is',exists)
-            res.status(200).json(exists)
+            res.status(200).json(exists[0].response)
         }
     }
     catch (error) {
-        console.log('There is some error with the database queries')
+        console.log('There is some error with the database queries ')
         return res.status(500).json({msg : 'Internal Server Error. Problem with the database query'})
     }
 }

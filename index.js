@@ -6,7 +6,10 @@ const aiRoutes = require("./routes/aiRoutes");
 
 //Middlewares for cors handling and parsing json into readable format
 const app = express();
-app.use(cors());
+const corsOptions = {
+    origin : ["http://localhost:5173","http://localhost:4173",process.env.FRONTEND_URL]
+}
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rate Limiter
