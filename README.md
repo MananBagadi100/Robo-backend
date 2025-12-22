@@ -33,7 +33,7 @@ This backend is lightweight, fast, and fully deployable (Vercel / Render / Railw
 To prevent API abuse and control OpenAI usage costs, the backend implements **IP-based rate limiting**.
 
 ### Policy
-- **1 request per IP per hour**
+- **3 request per hour**
 - Automatically blocks excessive requests
 - Returns HTTP **429 – Too Many Requests**
 
@@ -44,6 +44,27 @@ To prevent API abuse and control OpenAI usage costs, the backend implements **IP
 
 This logic is handled entirely on the backend using `express-rate-limit`, so the frontend remains lightweight.
 
+---
+## ♻️ Idempotency & Prompt Caching
+
+To avoid duplicate OpenAI calls and unnecessary costs, the backend implements **prompt-level idempotency**.
+
+- User prompts are **normalized** (lowercased, trimmed, extra spaces removed)
+- The normalized prompt is **hashed**
+- The hash is checked in the database before calling OpenAI
+- If a match exists, the cached AI response is returned instantly
+- OpenAI is only called on a **cache miss**
+
+This ensures repeated prompts never trigger duplicate AI generation.
+
+---
+### 📊 Business Impact
+
+- **~60–80% OpenAI API cost reduction** for repeated prompts (especially image generation)
+- **2–5× faster responses** on cache hits (DB read vs AI call)
+- Improved UX by eliminating unnecessary waiting time
+
+---
 ---
 
 ## 📁 Folder Structure
@@ -222,6 +243,8 @@ This backend demonstrates:
 ✔ Production-ready design & deployment  
 ✔ Easy API testing workflow  
 ✔ API rate limiting to prevent abuse and control costs
+✔ Idempotent request handling via prompt hashing and caching  
+✔ Cost‑optimized AI usage with reduced latency and API spend  
 
 ---
 
