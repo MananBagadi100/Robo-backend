@@ -81,6 +81,10 @@ backend/
 ├── services/
 │   └── openaiService.js    # OpenAI integration
 │
+├── middleware/
+│   ├── checkHash.js        # Prompt normalization + hashing (idempotency)
+│   └── checkRateLimits.js  # Rate limiting before OpenAI API call
+│
 ├── .env                    # API key + config (not tracked)
 ├── index.js                # Server entry point
 ├── package.json
