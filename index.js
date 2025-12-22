@@ -13,18 +13,18 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rate Limiter
-const rateLimit = require('express-rate-limit')
-const limiter = rateLimit({
-	windowMs: 60 * 60 * 1000, // 60 minutes window
-	limit: 3, // Limit each IP to 3 requests per `window` (here, per 60 minutes).
-	standardHeaders: 'draft-8',
-	legacyHeaders: false,
-    handler : (req,res) => {
-        console.log('The IP of the client is ',req.connection.remoteAddress)
-        res.status(429).json({msg : 'Usage Limit Reached . Please try again after an hour'})
-    }
-})
-app.use(limiter)    //apply to all requests 
+// const rateLimit = require('express-rate-limit')
+// const limiter = rateLimit({
+// 	windowMs: 60 * 60 * 1000, // 60 minutes window
+// 	limit: 3, // Limit each IP to 3 requests per `window` (here, per 60 minutes).
+// 	standardHeaders: 'draft-8',
+// 	legacyHeaders: false,
+//     handler : (req,res) => {
+//         console.log('The IP of the client is ',req.connection.remoteAddress)
+//         res.status(429).json({msg : 'Usage Limit Reached . Please try again after an hour'})
+//     }
+// })
+// app.use(limiter)    //apply to all requests 
 
 //Tesing 
 app.use('/api/test',(req,res) => {

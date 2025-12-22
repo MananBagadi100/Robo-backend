@@ -14,7 +14,6 @@ const generateContent = async (req, res) => {
         try {
             //For generating post
             const result = await generatePost(normalizedPrompt)
-            console.log('the result of the ai query is ',result)
             //Storing the prompt in database for future - indempotency concept
             try {
                 await pool.query(`INSERT INTO ai_cache (request_hash ,prompt,response) VALUES (?,?,?) `,[hashedPrompt,normalizedPrompt,JSON.stringify(result)])
