@@ -15,8 +15,8 @@ app.use(express.json());
 // Rate Limiter
 const rateLimit = require('express-rate-limit')
 const limiter = rateLimit({
-	windowMs: 60 * 60 * 1000, // 60 minutes
-	limit: 10, // Limit each IP to 1 requests per `window` (here, per 60 minutes).
+	windowMs: 60 * 60 * 1000, // 60 minutes window
+	limit: 3, // Limit each IP to 3 requests per `window` (here, per 60 minutes).
 	standardHeaders: 'draft-8',
 	legacyHeaders: false,
     handler : (req,res) => {

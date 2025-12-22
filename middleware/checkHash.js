@@ -1,7 +1,6 @@
 const crypto = require('crypto')
 const {pool} = require('./../config/db')
 async function checkHash(req,res,next) {
-    console.log('i am in check has')
     const { prompt } = req.body
 
     if (!prompt || typeof prompt !== 'string') {        //if prompt is not a string
