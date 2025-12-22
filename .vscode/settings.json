@@ -1,0 +1,19 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 2000,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "SocialMediaDBConnection",
+            "database": "ai_socialMediaDB",
+            "username": "test_user",
+            "password": "StrongPass@123"
+        }
+    ]
+}

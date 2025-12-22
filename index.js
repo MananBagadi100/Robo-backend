@@ -6,24 +6,15 @@ const aiRoutes = require("./routes/aiRoutes");
 
 //Middlewares for cors handling and parsing json into readable format
 const app = express();
-app.use(cors());
+const corsOptions = {
+    origin : ["http://localhost:5173","http://localhost:4173",process.env.FRONTEND_URL]
+}
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Rate Limiter
-const rateLimit = require('express-rate-limit')
-const limiter = rateLimit({
-	windowMs: 60 * 60 * 1000, // 60 minutes
-	limit: 1, // Limit each IP to 1 requests per `window` (here, per 60 minutes).
-	standardHeaders: 'draft-8',
-	legacyHeaders: false,
-    handler : (req,res) => {
-        console.log('The IP of the client is ',req.headers['x-forwarded-for'] || req.connection.remoteAddress)
-        res.status(429).json({msg : 'Usage Limit Reached . Please try again after an hour'})
-    }
-})
-app.use(limiter)    //apply to all requests 
 //Tesing 
 app.use('/api/test',(req,res) => {
+    console.log(req.connection.remoteAddress)
     res.json({msg : "Hello from server !"})
 })
 // Routes

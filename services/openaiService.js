@@ -8,9 +8,9 @@ const client = new OpenAI({
 // Generating caption + hashtags + image
 const generatePost = async (prompt) => {
     try {
-        // 1️⃣ Generate text: caption + hashtags using GPT-4.1-mini
+        // Generate text: caption + hashtags using GPT-4.1-mini
         const textResponse = await client.chat.completions.create({
-            model: "gpt-4.1-mini",
+            model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
@@ -35,7 +35,7 @@ const generatePost = async (prompt) => {
             .filter((word) => word.startsWith("#"))
             .map((tag) => tag.trim());
 
-        // 2️⃣ Generate image using gpt-image-1
+        // Generate image using gpt-image-1 model
         const imageResponse = await client.images.generate({
             model: "gpt-image-1",
             prompt,

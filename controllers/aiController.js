@@ -1,25 +1,35 @@
 const { generatePost } = require("../services/openaiService");
+const { pool } = require("./../config/db")
 
 // Controller: handles /api/ai/generate
 const generateContent = async (req, res) => {
-    try {
-        console.log('the req.body is ',req.body)
-        const { prompt } = req.body;
+        console.log('the req.normalize prompt is ',req.normalizedPrompt)
+        console.log('the req.hashed prompt is ',req.hashedPrompt)
+        console.log('the req.prompt is ',req.prompt)
 
-        if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
-            return res.status(400).json({ msg: "Prompt is required" });
+        const hashedPrompt = req.hashedPrompt         //normalized hashed prompt
+        const normalizedPrompt = req.normalizedPrompt //prompt after normalization
+        const prompt = req.prompt                     //intial Prompt given by the user
+
+        try {
+            //For generating post
+            const result = await generatePost(normalizedPrompt)
+            //Storing the prompt in database for future - indempotency concept
+            try {
+                await pool.query(`INSERT INTO ai_cache (request_hash ,prompt,response) VALUES (?,?,?) `,[hashedPrompt,normalizedPrompt,JSON.stringify(result)])
+            }
+            //If storing prompt details was unsuccessful
+            catch (error) {
+                console.log('There is some error with the database')
+                return res.status(500).json({msg : 'Internal Server Error. Problem with the database query'})
+            }
+            //If Storing the prompt details was successful in the database
+            return res.status(200).json(result)
         }
-
-        // For generating the post
-        const result = await generatePost(prompt);
-
-        return res.status(200).json(result);
-    } catch (error) {
-        console.error("Error in generateContent:", error);
-        return res.status(500).json({
-            msg: "Failed to generate AI content. Please try again.",
-        });
-    }
+        catch (error) {
+            console.log('The error is',error)
+            return res.status(500).json({msg : 'Internal Server Error. Failed to generate AI content .Please try again '})
+        }
 };
 
 module.exports = { generateContent };
