@@ -7,12 +7,9 @@ const generateContent = async (req, res) => {
         console.log('the req.hashed prompt is ',req.hashedPrompt)
         console.log('the req.prompt is ',req.prompt)
 
-        const hashedPrompt = req.hashedPrompt         //normalized hashed prompt
         const normalizedPrompt = req.normalizedPrompt //prompt after normalization
-        const prompt = req.prompt                     //intial Prompt given by the user
 
         try {
-            // return res.json({msg : 'You reached controller !'})
             //For generating post from llm
             const result = await generatePost(normalizedPrompt)
             //updating and result and status in the database
