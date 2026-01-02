@@ -7,27 +7,29 @@ const generateContent = async (req, res) => {
         console.log('the req.hashed prompt is ',req.hashedPrompt)
         console.log('the req.prompt is ',req.prompt)
 
-        const hashedPrompt = req.hashedPrompt         //normalized hashed prompt
         const normalizedPrompt = req.normalizedPrompt //prompt after normalization
-        const prompt = req.prompt                     //intial Prompt given by the user
 
         try {
-            //For generating post
+            //For generating post from llm
             const result = await generatePost(normalizedPrompt)
-            //Storing the prompt in database for future - indempotency concept
+            //updating and result and status in the database
             try {
-                await pool.query(`INSERT INTO ai_cache (request_hash ,prompt,response) VALUES (?,?,?) `,[hashedPrompt,normalizedPrompt,JSON.stringify(result)])
+                await pool.query(`UPDATE ai_cache 
+                    SET response = ? , status = ? , updated_at = CURRENT_TIMESTAMP`,
+                    [JSON.stringify(result),'DONE'])
+
+                //If updating the prompt details was successful in the database
+                return res.status(200).json(result)
             }
-            //If storing prompt details was unsuccessful
+            //If the updation of the details was not successful
             catch (error) {
-                console.log('There is some error with the database')
-                return res.status(500).json({msg : 'Internal Server Error. Problem with the database query'})
+                console.log('Some error while updating the llm response details')
+                return res.status(500).json({msg : 'Internal Server Error. Problem with updating details in the database'})
             }
-            //If Storing the prompt details was successful in the database
-            return res.status(200).json(result)
+
         }
         catch (error) {
-            console.log('The error is',error)
+            console.log('The error while generating post from llm is',error)
             return res.status(500).json({msg : 'Internal Server Error. Failed to generate AI content .Please try again '})
         }
 };

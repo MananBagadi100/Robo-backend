@@ -33,7 +33,7 @@ This backend is lightweight, fast, and fully deployable (Vercel / Render / Railw
 To prevent API abuse and control OpenAI usage costs, the backend implements **IP-based rate limiting**.
 
 ### Policy
-- **3 request per hour**
+- **3 request every 10 min**
 - Automatically blocks excessive requests
 - Returns HTTP **429 – Too Many Requests**
 
@@ -45,26 +45,63 @@ To prevent API abuse and control OpenAI usage costs, the backend implements **IP
 This logic is handled entirely on the backend using `express-rate-limit`, so the frontend remains lightweight.
 
 ---
-## ♻️ Idempotency & Prompt Caching
+## ♻️ Idempotency, Prompt Caching & Concurrency Control
 
-To avoid duplicate OpenAI calls and unnecessary costs, the backend implements **prompt-level idempotency**.
+To avoid duplicate OpenAI calls, race conditions, and cache stampede under concurrent traffic,
+the backend implements **prompt-level idempotency with status-based concurrency control**.
+
+### How it works
 
 - User prompts are **normalized** (lowercased, trimmed, extra spaces removed)
 - The normalized prompt is **hashed**
-- The hash is checked in the database before calling OpenAI
-- If a match exists, the cached AI response is returned instantly
-- OpenAI is only called on a **cache miss**
+- The hash is stored in the database with a **unique constraint**
+- A row is **inserted first** with `status = in_progress`
+- This row acts as a **lock** for that prompt
 
-This ensures repeated prompts never trigger duplicate AI generation.
+### Request Flow
 
+- If a prompt hash **does not exist**:
+  - A new row is inserted with `status = in_progress`
+  - OpenAI API is called
+  - The response is stored
+  - Status is updated to `done`
+
+- If a prompt hash **already exists**:
+  - If `status = done` → cached response is returned instantly
+  - If `status = in_progress` → server returns **HTTP 202 (Accepted)** and asks the client to retry after a delay
+
+This ensures that **only one OpenAI request is ever executed per unique prompt**, even if multiple users
+send the same prompt at the same time.
+
+### ⚡ Cache Stampede Example (2 users at the same time)
+
+If two users send the **same prompt** at nearly the same time:
+
+- **User A** hits the server first:
+  - DB has no entry → backend inserts a row with `status = in_progress`
+  - OpenAI is called and generation starts
+
+- **User B** hits the server while A is still processing:
+  - DB entry already exists with `status = in_progress`
+  - backend does **NOT** call OpenAI again
+  - backend returns **HTTP `202 Accepted`** with a retry delay (e.g., `waitTime_in_ms: 3000`)
+
+- After OpenAI finishes for User A:
+  - backend stores the final response and updates status to `done`
+
+- When User B retries:
+  - DB now shows `status = done`
+  - backend returns the cached response instantly with **HTTP `200 OK`**
+
+✅ Result: **only ONE OpenAI call** happens, and all concurrent requests safely wait instead of stampeding the cache.
 ---
 ### 📊 Business Impact
 
 - **~60–80% OpenAI API cost reduction** for repeated prompts (especially image generation)
 - **2–5× faster responses** on cache hits (DB read vs AI call)
 - Improved UX by eliminating unnecessary waiting time
+- Prevents **cache stampede** by blocking duplicate OpenAI calls during concurrent requests
 
----
 ---
 
 ## 📁 Folder Structure
@@ -82,7 +119,7 @@ backend/
 │   └── openaiService.js    # OpenAI integration
 │
 ├── middleware/
-│   ├── checkHash.js        # Prompt normalization + hashing (idempotency)
+│   ├── checkHash.js        # Prompt normalization + hashing (idempotency and cache stampede handling)
 │   └── checkRateLimits.js  # Rate limiting before OpenAI API call
 │
 ├── .env                    # API key + config (not tracked)
@@ -236,7 +273,7 @@ Generates:
 
 ---
 
-# 📄 Assignment Summary (Backend)
+# 📄 Summary (Backend)
 
 This backend demonstrates:
 

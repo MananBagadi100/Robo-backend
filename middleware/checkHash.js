@@ -14,22 +14,33 @@ async function checkHash(req,res,next) {
     //Hashing the prompt after normalization
     const newHashedPrompt = crypto.createHash('sha256').update(normalizedPrompt).digest('hex')
     
-    //Finding if that particular hash exists in the database
+    //First storing the prompt details and putting status as 'ON_PROGRESS'
     try {
-        const [exists] = await pool.query(`SELECT * FROM ai_cache WHERE request_hash = ?`,[newHashedPrompt])
-        if (exists.length === 0) {     //prompt not found in the database
-            req.prompt = prompt        //things For the next middleware to access
-            req.normalizedPrompt = normalizedPrompt
-            req.hashedPrompt = newHashedPrompt
-            return next () 
-        }
-        else {
-            res.status(200).json(exists[0].response)
-        }
+        const [exists] = await pool.query(`INSERT INTO ai_cache (request_hash,prompt,response) 
+            VALUES(?,?,?)`,
+            [newHashedPrompt,prompt,null])
+        console.log(exists)
+            if(exists.affectedRows === 1) {  //If the insertion was successful
+                req.prompt = prompt             //Credentials for the next middleware to use
+                req.normalizedPrompt = normalizedPrompt
+                req.hashedPrompt = newHashedPrompt
+                return next()
+            }
     }
-    catch (error) {
-        console.log('There is some error with the database queries ')
-        return res.status(500).json({msg : 'Internal Server Error. Problem with the database query'})
+
+    catch (error) {         // If same prompt request being processed (by another user, or another tab)
+        try {
+            const [exists] = await pool.query(`SELECT * FROM ai_cache     
+                WHERE request_hash = ? AND status = 'DONE'`,
+                [newHashedPrompt])              //If that same prompt req is processed successfully (status is DONE)
+            console.log('the catch block result is ',exists[0])
+            return res.status(200).json(exists[0].response) //return its response to all other same req (made by multiple users or tabs etc)
+        }
+        catch (error) {     //If the prompt req is still processing we tell other same req to try again after the specificed wait time
+            console.log('the error in finding the done req is ',error)
+            return res.status(202).json({msg : 'Another same request processing . Please wait for some time',waitTime_in_ms : 3000 })  
+        }
+        
     }
 }
 module.exports = {checkHash}
