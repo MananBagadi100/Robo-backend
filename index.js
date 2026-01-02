@@ -12,7 +12,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-//Tesing 
+//Testing 
 app.use('/api/test',(req,res) => {
     console.log(req.connection.remoteAddress)
     res.json({msg : "Hello from server !"})
