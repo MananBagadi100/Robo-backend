@@ -16,7 +16,9 @@ async function checkHash(req,res,next) {
     
     //First storing the prompt details and putting status as 'ON_PROGRESS'
     try {
-        const [exists] = await pool.query(`INSERT INTO ai_cache (request_hash,prompt,response) VALUES(?,?,?)`,[newHashedPrompt,prompt,null])
+        const [exists] = await pool.query(`INSERT INTO ai_cache (request_hash,prompt,response) 
+            VALUES(?,?,?)`,
+            [newHashedPrompt,prompt,null])
         console.log(exists)
             if(exists.affectedRows === 1) {  //If the insertion was successful
                 req.prompt = prompt             //Credentials for the next middleware to use
@@ -25,8 +27,20 @@ async function checkHash(req,res,next) {
                 return next()
             }
     }
-    catch (error) {         // If same prompt request is processing (by another user, or another tab)
-        return res.status(202).json({msg : 'Another same request processing . Please wait for some time',waitTime_in_ms : 3000 })  
+
+    catch (error) {         // If same prompt request being processed (by another user, or another tab)
+        try {
+            const [exists] = await pool.query(`SELECT * FROM ai_cache     
+                WHERE request_hash = ? AND status = 'DONE'`,
+                [newHashedPrompt])              //If that same prompt req is processed successfully (status is DONE)
+            console.log('the catch block result is ',exists[0])
+            return res.status(200).json(exists[0].response) //return its response to all other same req (made by multiple users or tabs etc)
+        }
+        catch (error) {     //If the prompt req is still processing we tell other same req to try again after the specificed wait time
+            console.log('the error in finding the done req is ',error)
+            return res.status(202).json({msg : 'Another same request processing . Please wait for some time',waitTime_in_ms : 3000 })  
+        }
+        
     }
 }
 module.exports = {checkHash}
