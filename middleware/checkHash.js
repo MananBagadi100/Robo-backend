@@ -14,7 +14,7 @@ async function checkHash(req,res,next) {
     //Hashing the prompt after normalization
     const newHashedPrompt = crypto.createHash('sha256').update(normalizedPrompt).digest('hex')
     
-    //First storing the prompt details and putting status as 'ON_PROGRESS'
+    //First storing the prompt details for unique prompts and putting status as 'ON_PROGRESS'
     try {
         const [exists] = await pool.query(`INSERT INTO ai_cache (request_hash,prompt,response) 
             VALUES(?,?,?)`,
@@ -24,11 +24,12 @@ async function checkHash(req,res,next) {
                 req.prompt = prompt             //Credentials for the next middleware to use
                 req.normalizedPrompt = normalizedPrompt
                 req.hashedPrompt = newHashedPrompt
+                req.insertId = exists.insertId      //id of the newly inserted row (not for concurrent req)
                 return next()
             }
     }
-
-    catch (error) {         // If same prompt request being processed (by another user, or another tab)
+    //Block for concurrent req (not unique req) by other users, tabs etc
+    catch (error) {         
         try {
             const [exists] = await pool.query(`SELECT * FROM ai_cache     
                 WHERE request_hash = ? AND status = 'DONE'`,

@@ -8,6 +8,7 @@ const generateContent = async (req, res) => {
         console.log('the req.prompt is ',req.prompt)
 
         const normalizedPrompt = req.normalizedPrompt //prompt after normalization
+        const insertId = req.insertId   //id of the newly inserted prompt row (not for concurrent req !)
 
         try {
             //For generating post from llm
@@ -15,8 +16,9 @@ const generateContent = async (req, res) => {
             //updating and result and status in the database
             try {
                 await pool.query(`UPDATE ai_cache 
-                    SET response = ? , status = ? , updated_at = CURRENT_TIMESTAMP`,
-                    [JSON.stringify(result),'DONE'])
+                    SET response = ? , status = ? , updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? `,
+                    [JSON.stringify(result),'DONE',insertId])
 
                 //If updating the prompt details was successful in the database
                 return res.status(200).json(result)
