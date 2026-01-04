@@ -45,10 +45,7 @@ const getGenerationStatus = async (req,res) => {
 
         switch (exists[0].status) {
             case 'DONE' : 
-                return res.status(200).json({
-                    status : exists[0].status,
-                    result : exists[0].response
-                })
+                return res.status(200).json(exists[0].response)
 
             case 'IN_PROGRESS' : 
                 return res.status(202).json({
