@@ -28,21 +28,33 @@ async function checkHash(req,res,next) {
                 return next()
             }
     }
-    //Block for concurrent req (not unique req) by other users, tabs etc
+    //Code for concurrent req for eg same req by other users, tabs etc
     catch (error) {         
         try {
             const [exists] = await pool.query(`SELECT * FROM ai_cache     
-                WHERE request_hash = ? AND status = 'DONE'`,
-                [newHashedPrompt])              //If that same prompt req is processed successfully (status is DONE)
+                WHERE request_hash = ? `,
+                [newHashedPrompt])              //Fetching the details for the primary request
             console.log('the catch block result is ',exists[0])
-            return res.status(200).json(exists[0].response) //return its response to all other same req (made by multiple users or tabs etc)
+
+            switch (exists[0].status) {         //First checking the status of primary request
+                case 'DONE' : 
+                    return res.status(200).json(exists[0].response)
+                
+                case 'IN_PROGRESS' :
+                    return res.status(202).json({
+                        msg : 'Another same request processing . Please wait for some time',
+                        waitTime_in_ms : 3000 ,
+                        jobId : exists[0].id        //id of the primary req
+                    })  
+            }
         }
         catch (error) {     //If the prompt req is still processing we tell other same req to try again after the specificed wait time
-            console.log('the error in finding the done req is ',error)
-            return res.status(202).json({msg : 'Another same request processing . Please wait for some time',waitTime_in_ms : 3000 })  
+            console.log('Unable to fetch the primary req details . The Error is : ',error)
+            return res.status(500).json({msg : 'Internal Server Error . Unable to fetch the req details'})  
         }
         
     }
 }
 module.exports = {checkHash}
 
+    
