@@ -44,11 +44,11 @@ async function checkHash(req,res,next) {
                     return res.status(202).json({
                         msg : 'Another same request processing . Please wait for some time',
                         waitTime_in_ms : 3000 ,
-                        jobId : exists[0].id        //id of the primary req
+                        jobId : exists[0].id        //id of the primary request
                     })  
             }
         }
-        catch (error) {     //If the prompt req is still processing we tell other same req to try again after the specificed wait time
+        catch (error) {     //Handling errors (if any)
             console.log('Unable to fetch the primary req details . The Error is : ',error)
             return res.status(500).json({msg : 'Internal Server Error . Unable to fetch the req details'})  
         }

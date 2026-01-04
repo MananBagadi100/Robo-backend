@@ -42,6 +42,7 @@ const getGenerationStatus = async (req,res) => {
         const [exists] = await pool.query(`SELECT *
             FROM ai_cache WHERE id = ? `,[id])  //getting the status of the job creater or primary req
         console.log(exists[0].status)
+
         switch (exists[0].status) {
             case 'DONE' : 
                 return res.status(200).json({
@@ -61,13 +62,14 @@ const getGenerationStatus = async (req,res) => {
                     status : exists[0].status,
                     jobId : exists[0].id,
                     msg : 'Primary request failed due to some reason'
-                })
-                
+                })  
         }
-        return res.json({msg : "fetched"})
     }
     catch (error) {
         console.log('THe error is ',error)
+        return res.status(500).json({
+            msg : 'Internal Server Error. Problem in fetching details from database'
+        })
     }
 }
 
