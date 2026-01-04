@@ -41,7 +41,6 @@ const getGenerationStatus = async (req,res) => {
     try {
         const [exists] = await pool.query(`SELECT *
             FROM ai_cache WHERE id = ? `,[id])  //getting the status of the job creater or primary req
-        console.log(exists[0].status)
 
         switch (exists[0].status) {
             case 'DONE' : 
