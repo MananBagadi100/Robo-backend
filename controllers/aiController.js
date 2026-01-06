@@ -8,11 +8,11 @@ const generateContent = async (req, res) => {
         console.log('the req.prompt is ',req.prompt)
 
         const normalizedPrompt = req.normalizedPrompt //prompt after normalization
-        const insertId = req.insertId   //id of the newly inserted prompt row (not for concurrent req !)
+        const insertId = req.insertId   //id of the newly inserted primary req prompt (not for concurrent req !)
 
         try {
             //For generating post from llm
-            const result = await generatePost(normalizedPrompt)
+            const result = await generatePost(normalizedPrompt,insertId)
             //updating and result and status in the database
             try {
                 await pool.query(`UPDATE ai_cache 

@@ -1,3 +1,4 @@
+const { pool } = require('./../config/db')
 const OpenAI = require("openai");
 require("dotenv").config();
 
@@ -6,7 +7,7 @@ const client = new OpenAI({
 });
 
 // Generating caption + hashtags + image
-const generatePost = async (prompt) => {
+const generatePost = async (prompt, primaryRequestId) => {
     try {
         // Generate text: caption + hashtags using GPT-4.1-mini
         const textResponse = await client.chat.completions.create({
@@ -39,10 +40,30 @@ const generatePost = async (prompt) => {
         const imageResponse = await client.images.generate({
             model: "gpt-image-1",
             prompt,
+            quality : 'medium',
             size: "1024x1024",
         });
 
         const base64Image = imageResponse.data[0].b64_json;
+
+        //all the metrics
+        const textInputTokens = textResponse.usage.prompt_tokens
+        const textOutputTokens = textResponse.usage.completion_tokens
+        const imageInputTokens = imageResponse.usage.input_tokens
+        const imageOutputTokens = imageResponse.usage.output_tokens
+        const totalTokens = textInputTokens + textOutputTokens + imageInputTokens + imageOutputTokens
+
+        //storing metrics in database
+        try {
+            await pool.query(`INSERT INTO ai_request_metrics 
+                (prompt_id, text_input_tokens, text_output_tokens, image_input_tokens, image_output_tokens , total_tokens_consumed) 
+                VALUES (?,?,?,?,?,?)`,
+            [primaryRequestId,textInputTokens,textOutputTokens,imageInputTokens,imageOutputTokens,totalTokens])
+        }
+        catch (error) {
+            console.log('There was some error in storing the Open AI request metrics')
+            console.log('The error is ',error)
+        }
 
         return {
             caption,
