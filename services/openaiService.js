@@ -8,6 +8,7 @@ const client = new OpenAI({
 
 // Generating caption + hashtags + image
 const generatePost = async (prompt) => {
+    const startTime = Date.now()    // ai latency start time
     try {
         // Generate text: caption + hashtags using GPT-4.1-mini
         const textResponse = await client.chat.completions.create({
@@ -46,6 +47,8 @@ const generatePost = async (prompt) => {
 
         const base64Image = imageResponse.data[0].b64_json;
 
+        const endTime = Date.now()  //end time
+        const aiLatency = endTime - startTime   //Calculating the ai call latency in ms
         //all the metrics
         const textInputTokens = textResponse.usage.prompt_tokens
         const textOutputTokens = textResponse.usage.completion_tokens
@@ -64,7 +67,8 @@ const generatePost = async (prompt) => {
                 textOutputTokens, 
                 imageInputTokens, 
                 imageOutputTokens, 
-                totalTokens
+                totalTokens,
+                aiLatency
             }
         }
 

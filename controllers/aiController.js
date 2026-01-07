@@ -11,6 +11,7 @@ const generateContent = async (req, res) => {
         const insertId = req.insertId   //id of the newly inserted primary req (not for concurrent req)
 
         try {
+            const requestStartTime = Date.now()
             //For generating post from llm
             const answer = await generatePost(normalizedPrompt)
             const {
@@ -18,7 +19,8 @@ const generateContent = async (req, res) => {
                 textOutputTokens,
                 imageInputTokens,
                 imageOutputTokens,
-                totalTokens
+                totalTokens,
+                aiLatency
             } = answer.metrics
             //updating the api result and status in the database
             try {
@@ -26,13 +28,19 @@ const generateContent = async (req, res) => {
                     SET response = ? , status = ? , updated_at = CURRENT_TIMESTAMP
                     WHERE id = ? `,
                     [JSON.stringify(answer.result),'DONE',insertId])
-
+                
+                const requestEndTime = Date.now()
+                const requestLatency = requestEndTime - requestStartTime   //calculating overall request latency in ms
                 //storing metrics in database
                 try {
                     await pool.query(`INSERT INTO ai_request_metrics 
-                        (prompt_id, text_input_tokens, text_output_tokens, image_input_tokens, image_output_tokens , total_tokens_consumed) 
-                        VALUES (?,?,?,?,?,?)`,
-                        [insertId,textInputTokens,textOutputTokens,imageInputTokens,imageOutputTokens,totalTokens])
+                        (prompt_id, text_input_tokens, text_output_tokens,
+                         image_input_tokens, image_output_tokens, total_tokens_consumed,
+                         ai_latency_ms ,latency_ms) 
+                        VALUES (?,?,?,?,?,?,?,?)`,
+                        [insertId,textInputTokens,textOutputTokens,
+                            imageInputTokens,imageOutputTokens,totalTokens,
+                            aiLatency,requestLatency])
                 }
                 catch (error) {
                     console.log('There was some error in storing the Open AI request metrics')
@@ -50,7 +58,9 @@ const generateContent = async (req, res) => {
         }
         catch (error) {         //if errors while generating post (maybe open ai limit reached , balance is 0 etc !)
             console.log('The error while generating post from llm is',error)
-            return res.status(500).json({msg : 'Internal Server Error. Failed to generate AI content .Please try again '})
+            await pool.query(`UPDATE ai_cache SET status = 'FAILED' 
+                WHERE id = ? `,[insertId])
+            return res.status(502).json({msg : 'Open AI Upstream Failed to generate AI content .Please try again '})
         }
 };
 
