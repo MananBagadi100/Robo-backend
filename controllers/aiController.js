@@ -8,29 +8,47 @@ const generateContent = async (req, res) => {
         console.log('the req.prompt is ',req.prompt)
 
         const normalizedPrompt = req.normalizedPrompt //prompt after normalization
-        const insertId = req.insertId   //id of the newly inserted primary req prompt (not for concurrent req !)
+        const insertId = req.insertId   //id of the newly inserted primary req (not for concurrent req)
 
         try {
             //For generating post from llm
-            const result = await generatePost(normalizedPrompt,insertId)
-            //updating and result and status in the database
+            const answer = await generatePost(normalizedPrompt)
+            const {
+                textInputTokens,
+                textOutputTokens,
+                imageInputTokens,
+                imageOutputTokens,
+                totalTokens
+            } = answer.metrics
+            //updating the api result and status in the database
             try {
                 await pool.query(`UPDATE ai_cache 
                     SET response = ? , status = ? , updated_at = CURRENT_TIMESTAMP
                     WHERE id = ? `,
-                    [JSON.stringify(result),'DONE',insertId])
+                    [JSON.stringify(answer.result),'DONE',insertId])
 
-                //If updating the prompt details was successful in the database
-                return res.status(200).json(result)
+                //storing metrics in database
+                try {
+                    await pool.query(`INSERT INTO ai_request_metrics 
+                        (prompt_id, text_input_tokens, text_output_tokens, image_input_tokens, image_output_tokens , total_tokens_consumed) 
+                        VALUES (?,?,?,?,?,?)`,
+                        [insertId,textInputTokens,textOutputTokens,imageInputTokens,imageOutputTokens,totalTokens])
+                }
+                catch (error) {
+                    console.log('There was some error in storing the Open AI request metrics')
+                    console.log('The error is ',error)
+                }
+
+                //If updation of prompt details and metrics were successful
+                return res.status(200).json(answer.result)
             }
             //If the updation of the details was not successful
             catch (error) {
                 console.log('Some error while updating the llm response details')
                 return res.status(500).json({msg : 'Internal Server Error. Problem with updating details in the database'})
             }
-
         }
-        catch (error) {
+        catch (error) {         //if errors while generating post (maybe open ai limit reached , balance is 0 etc !)
             console.log('The error while generating post from llm is',error)
             return res.status(500).json({msg : 'Internal Server Error. Failed to generate AI content .Please try again '})
         }

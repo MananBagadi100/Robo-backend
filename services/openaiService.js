@@ -7,7 +7,7 @@ const client = new OpenAI({
 });
 
 // Generating caption + hashtags + image
-const generatePost = async (prompt, primaryRequestId) => {
+const generatePost = async (prompt) => {
     try {
         // Generate text: caption + hashtags using GPT-4.1-mini
         const textResponse = await client.chat.completions.create({
@@ -53,23 +53,22 @@ const generatePost = async (prompt, primaryRequestId) => {
         const imageOutputTokens = imageResponse.usage.output_tokens
         const totalTokens = textInputTokens + textOutputTokens + imageInputTokens + imageOutputTokens
 
-        //storing metrics in database
-        try {
-            await pool.query(`INSERT INTO ai_request_metrics 
-                (prompt_id, text_input_tokens, text_output_tokens, image_input_tokens, image_output_tokens , total_tokens_consumed) 
-                VALUES (?,?,?,?,?,?)`,
-            [primaryRequestId,textInputTokens,textOutputTokens,imageInputTokens,imageOutputTokens,totalTokens])
-        }
-        catch (error) {
-            console.log('There was some error in storing the Open AI request metrics')
-            console.log('The error is ',error)
+        const answer = {
+            result : {
+                caption,
+                hashtags,
+                imageBase64 : base64Image
+            },
+            metrics : {
+                textInputTokens, 
+                textOutputTokens, 
+                imageInputTokens, 
+                imageOutputTokens, 
+                totalTokens
+            }
         }
 
-        return {
-            caption,
-            hashtags,
-            imageBase64: base64Image,
-        };
+        return answer
     } catch (error) {
         console.error("Error inside openaiService.generatePost:", error);
         throw new Error("AI generation failed");
