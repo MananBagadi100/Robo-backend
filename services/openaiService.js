@@ -1,3 +1,4 @@
+const { pool } = require('./../config/db')
 const OpenAI = require("openai");
 require("dotenv").config();
 
@@ -7,6 +8,7 @@ const client = new OpenAI({
 
 // Generating caption + hashtags + image
 const generatePost = async (prompt) => {
+    const startTime = Date.now()    // ai latency start time
     try {
         // Generate text: caption + hashtags using GPT-4.1-mini
         const textResponse = await client.chat.completions.create({
@@ -39,16 +41,38 @@ const generatePost = async (prompt) => {
         const imageResponse = await client.images.generate({
             model: "gpt-image-1",
             prompt,
+            quality : 'medium',
             size: "1024x1024",
         });
 
         const base64Image = imageResponse.data[0].b64_json;
 
-        return {
-            caption,
-            hashtags,
-            imageBase64: base64Image,
-        };
+        const endTime = Date.now()  //end time
+        const aiLatency = endTime - startTime   //Calculating the ai call latency in ms
+        //all the metrics
+        const textInputTokens = textResponse.usage.prompt_tokens
+        const textOutputTokens = textResponse.usage.completion_tokens
+        const imageInputTokens = imageResponse.usage.input_tokens
+        const imageOutputTokens = imageResponse.usage.output_tokens
+        const totalTokens = textInputTokens + textOutputTokens + imageInputTokens + imageOutputTokens
+
+        const answer = {
+            result : {
+                caption,
+                hashtags,
+                imageBase64 : base64Image
+            },
+            metrics : {
+                textInputTokens, 
+                textOutputTokens, 
+                imageInputTokens, 
+                imageOutputTokens, 
+                totalTokens,
+                aiLatency
+            }
+        }
+
+        return answer
     } catch (error) {
         console.error("Error inside openaiService.generatePost:", error);
         throw new Error("AI generation failed");
