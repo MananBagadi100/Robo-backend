@@ -5,6 +5,6 @@ const { metricsSummary } = require('./../controllers/adminController')
 
 // GET : /api/admin/summary 
 // For getting all the metrics for the admin dashboard
-router.get('/summary',metricsSummary)
+router.get('/summary', metricsSummary)
 
 module.exports = router

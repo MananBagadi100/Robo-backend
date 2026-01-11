@@ -1,4 +1,5 @@
 const { generatePost } = require("../services/openaiService");
+const { costCalculator } = require('./../utils/costCalculator')
 const { pool } = require("./../config/db")
 
 // Controller: handles /api/ai/generate
@@ -31,16 +32,21 @@ const generateContent = async (req, res) => {
                 
                 const requestEndTime = Date.now()
                 const requestLatency = requestEndTime - requestStartTime   //calculating overall request latency in ms
+
+                //calculating the request cost 
+                const totalRequestCost = costCalculator(textInputTokens,textOutputTokens,
+                    imageInputTokens,imageOutputTokens)
+
                 //storing metrics in database
                 try {
                     await pool.query(`INSERT INTO ai_request_metrics 
                         (prompt_id, text_input_tokens, text_output_tokens,
                          image_input_tokens, image_output_tokens, total_tokens_consumed,
-                         ai_latency_ms ,latency_ms) 
-                        VALUES (?,?,?,?,?,?,?,?)`,
+                         ai_latency_ms ,latency_ms,openai_cost_microns) 
+                        VALUES (?,?,?,?,?,?,?,?,?)`,
                         [insertId,textInputTokens,textOutputTokens,
                             imageInputTokens,imageOutputTokens,totalTokens,
-                            aiLatency,requestLatency])
+                            aiLatency,requestLatency,totalRequestCost])
                 }
                 catch (error) {
                     console.log('There was some error in storing the Open AI request metrics')
