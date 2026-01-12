@@ -2,8 +2,6 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const aiRoutes = require("./routes/aiRoutes");
-
 //Middlewares for cors handling and parsing json into readable format
 const app = express();
 const corsOptions = {
@@ -17,8 +15,14 @@ app.use('/api/test',(req,res) => {
     console.log(req.connection.remoteAddress)
     res.json({msg : "Hello from server !"})
 })
-// Routes
+
+// Public Routes
+const aiRoutes = require("./routes/aiRoutes");
 app.use("/api/ai", aiRoutes);
+
+//For admin dashboard 
+const adminRoutes = require('./routes/adminRoutes')
+app.use('/api/admin',adminRoutes)
 
 const PORT = 3000; 
 app.listen(PORT, () => {
