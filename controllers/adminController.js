@@ -1,4 +1,5 @@
 const { pool } = require('./../config/db')
+const { USD_TO_MICRONS } = require('./../config/constants')
 
 const metricsSummary = async (req,res) => {
     //we are fetching individual metric values from the database 
@@ -23,7 +24,19 @@ const metricsSummary = async (req,res) => {
             `)
             console.log("------------------------------------------------------")
             console.log(metrics)
-            return res.status(200).json({msg : 'Nice'})
+            return res.status(200).json({
+                rows : rows,
+                summary : {
+                    avgTokens : metrics[0].avgTokensConsumedPerRequest,
+                    avgLatency : metrics[0].avgRequestLatency,
+                    totalSpendMicrons : metrics[0].totalApiSpend 
+                },
+                currency : {
+                    baseUnit : 'USD',
+                    storageUnit : 'Microns',
+                    micronsPerUsd : USD_TO_MICRONS
+                }
+            })
         }
         catch (error) {
             console.log('There was some error in fetching the aggregated metrics',error)

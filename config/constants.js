@@ -1,6 +1,6 @@
 //To Store all constants for easy access
 //conversion metrics
-const USD_TO_MICRONS = 1000000
+const USD_TO_MICRONS = 1000000  //means 1 usd = how many microns
 
 //open ai api costs
 const OPENAI_PRICING_USD = {        //all prices in USD
