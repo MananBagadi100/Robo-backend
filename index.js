@@ -22,7 +22,7 @@ app.use("/api/ai", aiRoutes);
 
 //For admin dashboard 
 const adminRoutes = require('./routes/adminRoutes')
-app.get('/api/admin',adminRoutes)
+app.use('/api/admin',adminRoutes)
 
 const PORT = 3000; 
 app.listen(PORT, () => {

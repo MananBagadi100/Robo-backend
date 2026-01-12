@@ -66,6 +66,7 @@ const generateContent = async (req, res) => {
             console.log('The error while generating post from llm is',error)
             await pool.query(`UPDATE ai_cache SET status = 'FAILED' 
                 WHERE id = ? `,[insertId])
+            console.log('Either open ai failed or some error in the generation function')
             return res.status(502).json({msg : 'Open AI Upstream Failed to generate AI content .Please try again '})
         }
 };
