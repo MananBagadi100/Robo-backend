@@ -12,7 +12,7 @@ const metricsSummary = async (req,res) => {
             JOIN ai_request_metrics m ON c.id = m.prompt_id
             ORDER BY c.created_at DESC;
         `)
-        console.log('the rows are ',rows)
+
         //then fetching the overall aggregated metrics
         try {
             const [metrics] = await pool.query(`
@@ -22,8 +22,7 @@ const metricsSummary = async (req,res) => {
                     SUM(COALESCE(openai_cost_microns,0)) as totalApiSpend
                 FROM ai_request_metrics
             `)
-            console.log("------------------------------------------------------")
-            console.log(metrics)
+
             return res.status(200).json({
                 rows : rows,
                 summary : {
